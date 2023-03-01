@@ -1,0 +1,252 @@
+# region VEXcode Generated Robot Configuration
+import math
+import random
+from vexcode_vrc import *
+from vexcode_vrc.events import get_Task_func
+
+# constructors
+
+drivetrain = Drivetrain()
+brain = Brain()
+bottom_distance = Distance("BottomDistance", 18)
+roller_optical = Optical("RollerOptical", 2)
+gps = GPS("GPS", 3)
+intake_motor_group = Motor("IntakeMotorGroup", 10)
+bottom_line_tracker = LineTracker("BottomLineTracker", 22)
+middle_line_tracker = LineTracker("MiddleLineTracker", 23)
+top_line_tracker = LineTracker("TopLineTracker", 24)
+# endregion VEXcode Generated Robot Configuration
+vexcode_brain_precision = 0
+Angle = 0
+AimAdjust = 0
+RedGoalDistance = 0
+BlueGoalDistance = 0
+Storage = 0
+Discs = [0 for x in range(3)]
+Scanner = [0 for x in range(2)]
+RollerTracker = [0 for x in range(2)]
+
+
+def Seek_Intake_X_Y_FireDiscs_Pickup(Seek_Intake_X_Y_FireDiscs_Pickup__X, Seek_Intake_X_Y_FireDiscs_Pickup__Y, Seek_Intake_X_Y_FireDiscs_Pickup__FireDiscs, Seek_Intake_X_Y_FireDiscs_Pickup__Pickup):
+    global Angle, AimAdjust, RedGoalDistance, BlueGoalDistance, Storage, Discs, Scanner, RollerTracker, vexcode_brain_precision
+    # Turns and moves to input coordinates
+    if Seek_Intake_X_Y_FireDiscs_Pickup__FireDiscs:
+        # If you are firing discs, finds distances to both goals and set variables equal to the distances
+        RedGoalDistance = math.sqrt(math.fabs(gps.x_position(INCHES) - 54) * math.fabs(gps.x_position(
+            INCHES) - 54) + math.fabs(gps.y_position(INCHES) - 54) * math.fabs(gps.y_position(INCHES) - 54))
+        BlueGoalDistance = math.sqrt(math.fabs(gps.x_position(INCHES) - -54) * math.fabs(gps.x_position(
+            INCHES) - -54) + math.fabs(gps.y_position(INCHES) - -54) * math.fabs(gps.y_position(INCHES) - -54))
+        if RedGoalDistance > BlueGoalDistance:
+            # If blue goal is closer, turns to goal and sets speed of intake to account for distance.
+            Turn_X_Y_Aim(-54, -54, 1)
+            intake_motor_group.set_velocity(
+                ((115 - 0.981 * BlueGoalDistance) + 0.0073 * (BlueGoalDistance * BlueGoalDistance)), PERCENT)
+        elif BlueGoalDistance > RedGoalDistance:
+            # If red goal is closer, turns to goal and sets speed of intake to account for distance.
+            Turn_X_Y_Aim(54, 54, 1)
+            intake_motor_group.set_velocity(
+                ((115 - 0.981 * RedGoalDistance) + 0.0073 * (RedGoalDistance * RedGoalDistance)), PERCENT)
+        else:
+            # Defaults to blue goal if both are the same distance
+            Turn_X_Y_Aim(-54, -54, 1)
+            intake_motor_group.set_velocity(
+                ((115 - 0.981 * BlueGoalDistance) + 0.0073 * (BlueGoalDistance * BlueGoalDistance)), PERCENT)
+        # Spins intake to fire all discs
+        intake_motor_group.spin_for(REVERSE, 120, DEGREES, wait=True)
+    else:
+        # If not firing, turn to input coordinates.
+        Turn_X_Y_Aim(Seek_Intake_X_Y_FireDiscs_Pickup__X,
+                     Seek_Intake_X_Y_FireDiscs_Pickup__Y, 0)
+        if Seek_Intake_X_Y_FireDiscs_Pickup__Pickup > 0:
+            # If you are intaking discs, move to slightly before the inputted coordinates and intake discs.
+            drivetrain.drive_for(FORWARD, (math.sqrt((gps.x_position(INCHES) - Seek_Intake_X_Y_FireDiscs_Pickup__X) * (gps.x_position(INCHES) - Seek_Intake_X_Y_FireDiscs_Pickup__X) + (
+                gps.y_position(INCHES) - Seek_Intake_X_Y_FireDiscs_Pickup__Y) * (gps.y_position(INCHES) - Seek_Intake_X_Y_FireDiscs_Pickup__Y)) - 8), INCHES, wait=True)
+            Intake__(Seek_Intake_X_Y_FireDiscs_Pickup__Pickup)
+        else:
+            # Move to inputted coordinates
+            drivetrain.drive_for(FORWARD, math.sqrt((gps.x_position(INCHES) - Seek_Intake_X_Y_FireDiscs_Pickup__X) * (gps.x_position(INCHES) - Seek_Intake_X_Y_FireDiscs_Pickup__X) + (
+                gps.y_position(INCHES) - Seek_Intake_X_Y_FireDiscs_Pickup__Y) * (gps.y_position(INCHES) - Seek_Intake_X_Y_FireDiscs_Pickup__Y)), INCHES, wait=True)
+
+
+def Intake__(Intake_____):
+    global Angle, AimAdjust, RedGoalDistance, BlueGoalDistance, Storage, Discs, Scanner, RollerTracker, vexcode_brain_precision
+    # Sets intake speed to maximum
+    intake_motor_group.set_velocity(100, PERCENT)
+    if Intake_____ > 0:
+        # If the inputted intake is over 0
+        if Storage + Intake_____ == 3 or Storage + Intake_____ < 3:
+            # If the inputted value added to the current number of discs stored is equal to or less than 3,
+            # turn the intake 30 degrees a number of times equal to the inputted number
+            intake_motor_group.spin_for(
+                REVERSE, (30 * Intake_____), DEGREES, wait=True)
+        else:
+            # If the inputted value added to the current number of discs stored is greater than 3,
+            # only intake the maximum number that can be stored.
+            intake_motor_group.spin_for(
+                REVERSE, (30 * (3 - Storage)), DEGREES, wait=True)
+
+
+def ClearCorner():
+    global Angle, AimAdjust, RedGoalDistance, BlueGoalDistance, Storage, Discs, Scanner, RollerTracker, vexcode_brain_precision
+    if gps.x_position(INCHES) < -36 and 36 < gps.y_position(INCHES) and RollerTracker[1 - 1] == 0:
+        # Conditional uses robot GPS sensor to check if its in the general area of the upper left corner
+        drivetrain.stop()
+        # Lines the robot up directly across from both rollers
+        Seek_Intake_X_Y_FireDiscs_Pickup(-35, 35, False, 0)
+        # Actually does the rollers
+        drivetrain.turn_to_heading(180, DEGREES, wait=True)
+        drivetrain.drive_for(REVERSE, 23.25, INCHES, wait=True)
+        intake_motor_group.spin_for(FORWARD, 40, DEGREES, wait=True)
+        drivetrain.drive_for(FORWARD, 11, INCHES, wait=True)
+        drivetrain.turn_to_heading(90, DEGREES, wait=True)
+        drivetrain.drive_for(REVERSE, 23.25, INCHES, wait=True)
+        intake_motor_group.spin_for(FORWARD, 40, DEGREES, wait=True)
+        drivetrain.drive_for(FORWARD, 11, INCHES, wait=True)
+        # Declares the roller group as done in the tracker list
+        RollerTracker[1 - 1] = 1
+    elif 36 < gps.x_position(INCHES) and gps.y_position(INCHES) < -36 and RollerTracker[2 - 1] == 0:
+        # Conditional uses robot GPS sensor to check if its in the general area of the lower right corner
+        drivetrain.stop()
+        # Lines the robot up directly across from both rollers
+        Seek_Intake_X_Y_FireDiscs_Pickup(35, -35, False, 0)
+        # Actually does the rollers
+        drivetrain.turn_to_heading(0, DEGREES, wait=True)
+        drivetrain.drive_for(REVERSE, 23.25, INCHES, wait=True)
+        intake_motor_group.spin_for(FORWARD, 40, DEGREES, wait=True)
+        drivetrain.drive_for(FORWARD, 11, INCHES, wait=True)
+        drivetrain.turn_to_heading(270, DEGREES, wait=True)
+        drivetrain.drive_for(REVERSE, 23.25, INCHES, wait=True)
+        intake_motor_group.spin_for(FORWARD, 40, DEGREES, wait=True)
+        drivetrain.drive_for(FORWARD, 11, INCHES, wait=True)
+        # Declares the roller group as odne in the tracker list
+        RollerTracker[2 - 1] = 1
+    else:
+        break
+
+
+def Scan_Seek_Pickup(Scan_Seek_Pickup__Pickup):
+    global Angle, AimAdjust, RedGoalDistance, BlueGoalDistance, Storage, Discs, Scanner, RollerTracker, vexcode_brain_precision
+    # This function searches for nearby disks on the field, and picks up the request # of disks
+    # The function uses a Scanner list that stores data in relation to where the found object is
+    drivetrain.set_rotation(0, DEGREES)
+    drivetrain.turn_for(RIGHT, 360, DEGREES, wait=False)
+    # We use just under 360 degrees to ensure it doesn't go over the angle
+    while not drivetrain.rotation(DEGREES) > 359.999999:
+        if bottom_distance.is_object_detected():
+            if bottom_distance.object_distance(INCHES) < 24:
+                # Conditions check if the BottomDistance Sensor found an object and if it was within 24 inches
+                drivetrain.stop()
+                # Scanner list takes note of the internal GPS rotation position
+                Scanner[1 - 1] = gps.heading()
+                # Scanner list takes note of distance to the detected object
+                Scanner[2 - 1] = bottom_distance.object_distance(INCHES)
+                break
+        wait(5, MSEC)
+    drivetrain.stop()
+    # Uses information gathered from sensors to drive just close enough to the detected object
+    drivetrain.turn_to_heading(Scanner[1 - 1], DEGREES, wait=True)
+    drivetrain.drive_for(FORWARD, (3 + Scanner[2 - 1]), INCHES, wait=True)
+    # Calls the Pickup method to pick up the disks
+    Intake__(Scan_Seek_Pickup__Pickup)
+
+
+def Turn_X_Y_Aim(Turn_X_Y_Aim__X, Turn_X_Y_Aim__Y, Turn_X_Y_Aim__Aim):
+    global Angle, AimAdjust, RedGoalDistance, BlueGoalDistance, Storage, Discs, Scanner, RollerTracker, vexcode_brain_precision
+    # X defines the X-Value of the point you wish to turn to. Y defines the Y-Value of said point.
+    # Aim defines whether you are aiming or not, with 1 meaning you are and 0 meaning you are not.
+    # If aiming, the robot turns the opposite heading it would have so that it back is facing the input
+    # coordinates instead of the front.
+    Angle = math.atan(math.fabs(gps.y_position(INCHES) - Turn_X_Y_Aim__Y) /
+                      math.fabs(gps.x_position(INCHES) - Turn_X_Y_Aim__X)) / math.pi * 180
+    AimAdjust = Turn_X_Y_Aim__Aim * 180
+    if Turn_X_Y_Aim__X > gps.x_position(INCHES) and Turn_X_Y_Aim__Y > gps.y_position(INCHES):
+        # If the inputted coordinates are in the 1st quadrant relative to the robot, turn to the inputted
+        # coordinates, accounting for the quadrant.
+        drivetrain.turn_to_heading(
+            ((90 + AimAdjust) - Angle), DEGREES, wait=True)
+    elif gps.x_position(INCHES) > Turn_X_Y_Aim__X and Turn_X_Y_Aim__Y > gps.y_position(INCHES):
+        # If the inputted coordinates are in the 2nd quadrant relative to the robot, turn to the inputted
+        # coordinates, accounting for the quadrant.
+        drivetrain.turn_to_heading(
+            ((270 - AimAdjust) + Angle), DEGREES, wait=True)
+    elif gps.x_position(INCHES) > Turn_X_Y_Aim__X and gps.y_position(INCHES) > Turn_X_Y_Aim__Y:
+        # If the inputted coordinates are in the 3rd quadrant relative to the robot, turn to the inputted
+        # coordinates, accounting for the quadrant.
+        drivetrain.turn_to_heading(
+            ((270 - AimAdjust) - Angle), DEGREES, wait=True)
+    elif Turn_X_Y_Aim__X > gps.x_position(INCHES) and gps.y_position(INCHES) > Turn_X_Y_Aim__Y:
+        # If the inputted coordinates are in the 4th quadrant relative to the robot, turn to the inputted
+        # coordinates, accounting for the quadrant.
+        drivetrain.turn_to_heading(
+            ((90 + AimAdjust) + Angle), DEGREES, wait=True)
+    elif Turn_X_Y_Aim__X == gps.x_position(INCHES) and Turn_X_Y_Aim__Y > gps.y_position(INCHES):
+        # If the inputted coordinates are directly "upward" from the robot, turn "upward"
+        drivetrain.turn_to_heading(AimAdjust, DEGREES, wait=True)
+    elif Turn_X_Y_Aim__X == gps.x_position(INCHES) and gps.y_position(INCHES) > Turn_X_Y_Aim__Y:
+        # If the inputted coordinates are directly "downward" from the robot, turn "downward"
+        drivetrain.turn_to_heading((180 - AimAdjust), DEGREES, wait=True)
+    elif Turn_X_Y_Aim__Y == gps.y_position(INCHES) and gps.x_position(INCHES) > Turn_X_Y_Aim__X:
+        # If the inputted coordinates are directly "left" from the robot, turn "left"
+        drivetrain.turn_to_heading((270 - AimAdjust), DEGREES, wait=True)
+    else:
+        # If the inputted coordinates are directly "right" from the robot, turn "right"
+        drivetrain.turn_to_heading((90 + AimAdjust), DEGREES, wait=True)
+
+
+def when_started1():
+    global Angle, AimAdjust, RedGoalDistance, BlueGoalDistance, Storage, Discs, Scanner, RollerTracker, vexcode_brain_precision
+    # This function continuously runs while the intake isn't spinning for the whole match
+    while not intake_motor_group.is_spinning():
+        while True:
+            if top_line_tracker.reflectivity(PERCENT) > 80:
+                # Disc in Top Spot, updates status in Disks list tracker
+                Discs[1 - 1] = 1
+            else:
+                Discs[1 - 1] = 0
+            if middle_line_tracker.reflectivity(PERCENT) > 80:
+                # Disc in Middle Spot, updates status in Disks list tracker
+                Discs[2 - 1] = 1
+            else:
+                Discs[2 - 1] = 0
+            if bottom_line_tracker.reflectivity(PERCENT) > 80:
+                # Disc in Bottom Spot, updates status in Disks list tracker
+                Discs[3 - 1] = 1
+            else:
+                Discs[3 - 1] = 0
+            # Updates a different lists so the load variable is updated and the intake function works
+            Storage = Discs[1 - 1] + (Discs[2 - 1] + Discs[3 - 1])
+            wait(5, MSEC)
+        wait(5, MSEC)
+
+
+def when_started2():
+    global Angle, AimAdjust, RedGoalDistance, BlueGoalDistance, Storage, Discs, Scanner, RollerTracker, vexcode_brain_precision
+    # Master function that controls all movement and sub functions
+    # Resets velocities of all components and 0s the sensors
+    vexcode_brain_precision = 3
+    drivetrain.set_drive_velocity(100, PERCENT)
+    drivetrain.set_turn_velocity(100, PERCENT)
+    drivetrain.set_heading(gps.heading(), DEGREES)
+    intake_motor_group.set_velocity(100, PERCENT)
+    # Resets the intake
+    if Storage > 0:
+        intake_motor_group.spin_for(
+            FORWARD, (120 - Storage * 30), DEGREES, wait=True)
+    # Loop to look for disks and fire them for the first 40 seconds of a match
+    while not 45 < brain.timer.time(SECONDS):
+        # Function calls for 2 disks to always be gathered in the intake and then fired
+        Scan_Seek_Pickup(2)
+        Seek_Intake_X_Y_FireDiscs_Pickup(0, 0, True, 0)
+        wait(5, MSEC)
+    # Code moves the robot into the upper corner first
+    Seek_Intake_X_Y_FireDiscs_Pickup(-40, 40, False, 0)
+    # Robot performs upper corner
+    ClearCorner()
+    # Code moves the robot into the lower corner second
+    Seek_Intake_X_Y_FireDiscs_Pickup(40, -40, False, 0)
+    # Robot performs lower corner, parks on 4 tiles
+    ClearCorner()
+
+
+vr_thread(when_started2)
+vr_thread(when_started1)
